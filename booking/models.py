@@ -1,20 +1,17 @@
 from django.db import models
 
-from users.models import User
-
 
 class Country(models.Model):
-
-    name = models.CharField()
-
-
-class Town(models.Model):
-    name = models.CharField()
-    country = models.CharField()
+    name = models.CharField(max_length=100)
 
 
 class Amenity(models.Model):  # Услуги, Удобства. Wi-Fi/Бассейн/Можно с животными/...)
-    title = models.CharField()
+    title = models.CharField(max_length=100)
+
+
+class Town(models.Model):
+    name = models.CharField(max_length=100)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
 
 class Hotel(models.Model):
@@ -26,29 +23,31 @@ class Hotel(models.Model):
         (5, "5 звезд"),
     ]
 
-    title = models.CharField()
+    title = models.CharField(max_length=100)
     description = models.TextField()
     stars = models.IntegerField(choices=STARS, default=3)  # (1-5)
     town = models.ForeignKey(Town, on_delete=models.CASCADE)
-    amenities = models.CharField()
+    amenities = models.ManyToManyField(Amenity)
 
 
 class Room(models.Model):
-    title = models.CharField()
-    type = models.CharField()
+    title = models.CharField(max_length=100)
+    room_number = models.CharField(max_length=20)
+    type = models.CharField(max_length=100)
     total = models.FloatField()  # Количество номеров данного типа
-    hotel = models.CharField()
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
 
 
 class SeasonPrice(models.Model):
-    room = models.IntegerField()
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
-    price_per_night = models.FloatField()  # Цена за сутки
-    price = models.FloatField()  # Цена комнаты в указанный промежуток времени.
+    price_per_night = (
+        models.FloatField()
+    )  # Цена комнаты в указанный промежуток времени. Цена за сутки
 
 
-class Reservation:
+class Reservation(models.Model):
     STATUS = [
         ("confirmed", "оплачена, подтверждена"),
         ("check_in", "заселен"),
@@ -56,20 +55,19 @@ class Reservation:
         ("canceled", "отменил или не успел оплатить"),
         ("no_show", "неявка"),
     ]
-    room = models.IntegerField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
     check_in = models.DateField()  # (date)
     check_out = models.DateField()  # (date)
-    created_at = models.DateTimeField()  # (datetime)
+    created_at = models.DateTimeField(auto_now_add=True)  # (datetime)
     price = models.FloatField()  # Реальная цена на момент резервации
     status = models.CharField(
-        choices=STATUS, default="canceled"
+        choices=STATUS, default="confirmed"
     )  # confirmed(оплачена, подтверждена), check_in(заселен), check_out(выселен), canceled(отменил или не успел оплатить), no_show(неявка)
 
 
-class Token:
-    token = models.CharField(max_length=150)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    token_hash = models.CharField()
-    is_active = False
-    created_at = models.DateTimeField()
+class Token(models.Model):
+    token_hash = models.CharField(max_length=150)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
