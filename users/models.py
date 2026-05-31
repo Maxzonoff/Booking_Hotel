@@ -1,18 +1,23 @@
-from tkinter.constants import CASCADE
+import hashlib
+import secrets
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 from django.db import models
 
 
-class User(AbstractUser):
-    user_name = None
-    email = models.EmailField(unique=True)
-    phone = models.CharField(
-        max_length=35,
-        verbose_name="Телефон",
-        blank=True,
-        null=True,
-        help_text="Введите номер телефона",
-    )
+class Token(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
-    token = models.ForeignKey(Token, on_delete=models.CASCADE)
+    @classmethod
+    def generate_token(cls):
+        return secrets.token_urlsafe(32)
+
+    @classmethod
+    def hash_token(cls, token):
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def __str__(self):
+        return f"Token for {self.user.username}"
