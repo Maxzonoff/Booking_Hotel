@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from booking.auth import TokenAuthentication
 from booking.constants import ReservationStatus
 from booking.models import Hotel, Reservation
 from booking.serializers import (
@@ -25,6 +26,9 @@ class ReservationsCreateAPIView(generics.CreateAPIView):
 
 
 class ReservationsUpdateAPIView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = []
 
     def patch(self, request, id):
         try:

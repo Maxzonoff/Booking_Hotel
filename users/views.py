@@ -12,24 +12,13 @@ class RegisterView(APIView):
         username = request.data.get("username")
         password = request.data.get("password")
 
+        # что если пользователь есть в бд?
         user = User.objects.create_user(username=username, password=password)
 
-        raw_token = Token.generate_token()
-
-        token_hash = Token.hash_token(raw_token)
-        Token.objects.create(user=user, token_hash=token_hash)
-
-        return Response(
-            {
-                "message": "Регистрация успешна",
-                "token": raw_token,
-                "username": username,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(status=status.HTTP_201_CREATED)
 
 
-class LoginView(APIView):
+class GetTokenView(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
@@ -47,10 +36,16 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        #у пользователя должен быть только один токен
+
         raw_token = Token.generate_token()
         token_hash = Token.hash_token(raw_token)
-        Token.objects.create(user=user, token_hash=token_hash)
+        if Token.objects.filter(user=user).exists():
+            Token.objects.filter(user=user).update(token_hash=token_hash)
+        else:
+            Token.objects.create(user=user, token_hash=token_hash)
         return Response({"access_token": raw_token})
+
 
 class LogoutView(APIView):
     def post(self, request):
