@@ -41,7 +41,6 @@ class Hotel(models.Model):
 class Room(models.Model):
     title = models.CharField(max_length=100)
     type = models.CharField(max_length=100)
-    total = models.IntegerField()
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
 
 
